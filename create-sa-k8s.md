@@ -1,6 +1,9 @@
-### 1. **Создать ServiceAccount**
+# Создание SeviceAccount для внешнего доступа к кластеру Kubernetes
+
+## 1. **Создать ServiceAccount**
 
 Создадим сервисный аккаунт, от имени которого будет выполняться запрос:
+
 ```yaml
 apiVersion: v1
 kind: ServiceAccount
@@ -10,15 +13,16 @@ metadata:
 ```
 
 Применяем в кластере:
+
 ```bash
 kubectl apply -f serviceaccount.yaml
 ```
 
-### 2. **Создать Role или ClusterRole**
+## 2. **Создать Role или ClusterRole**
 
 Так как скрипт должен удалять поды, создадим **Role** (если нужен доступ только в одном неймспейсе) или **ClusterRole** (если нужен доступ ко всем неймспейсам).
 
-#### **Вариант 1: Role (доступ в одном неймспейсе)**
+### **Вариант 1: Role (доступ в одном неймспейсе)**
 
 ```yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -32,7 +36,7 @@ rules:
     verbs: ["delete"]
 ```
 
-#### **Вариант 2: ClusterRole (доступ ко всем неймспейсам)**
+### **Вариант 2: ClusterRole (доступ ко всем неймспейсам)**
 
 ```yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -46,11 +50,12 @@ rules:
 ```
 
 ---
-### 3. **Привязать Role к ServiceAccount**
+
+## 3. **Привязать Role к ServiceAccount**
 
 Теперь создадим **RoleBinding** или **ClusterRoleBinding**, чтобы связать сервисный аккаунт с ролью.
 
-#### **Если использовалась Role:**
+### **Если использовалась Role:**
 
 ```yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -68,7 +73,7 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
 ```
 
-Если использовалась ClusterRole:
+### **Если использовалась ClusterRole**
 
 ```yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -86,7 +91,8 @@ roleRef:
 ```
 
 ---
-### 4. **Получить токен для аутентификации**
+
+## 4. **Получить токен для аутентификации**
 
 Создадим токен для ServiceAccount:
 
@@ -98,7 +104,7 @@ kubectl create token pod-deleter --namespace default
 
 ---
 
-### 5. **Выполнить запрос на удаление пода**
+## 5. **Выполнить запрос на удаление пода**
 
 Теперь скрипт может отправлять HTTP-запросы к API Server Kubernetes. Например, с использованием `curl`:
 
@@ -115,9 +121,11 @@ curl -X DELETE "$APISERVER/api/v1/namespaces/$NAMESPACE/pods/$POD_NAME" \
 ```
 
 ---
+
 ### Альтернативный вариант: Использование `kubeconfig`
 
 Можно также создать kubeconfig с токеном ServiceAccount и использовать его в скрипте. Для этого:
+
 ```bash
 kubectl config set-credentials pod-deleter-user --token=$(kubectl create token pod-deleter --namespace default)
 
@@ -127,6 +135,7 @@ kubectl config use-context pod-deleter-context
 ```
 
 Затем в скрипте можно просто вызывать:
+
 ```bash
 kubectl delete pod $POD_NAME --namespace=$NAMESPACE
 ```
